@@ -1,0 +1,27 @@
+{
+  "name": "kmcapp",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "body-parser": "~1.15.2",
+    "cookie-parser": "~1.4.3",
+    "debug": "~2.2.0",
+    "ejs": "~2.5.2",
+    "express": "~4.14.0",
+    "morgan": "~1.7.0",
+    "serve-favicon": "~2.3.0",
+    "express-session": "latest",
+    "mongoose": "^4.7.8",
+    "passport": "latest",
+    "passport-facebook": "latest",
+    "passport-local": "^1.0.0",
+    "bcrypt-nodejs": "latest",
+    "connect-flash": "latest",
+    "request": "latest",
+    "follow-redirects" : "latest",
+    "express-force-ssl" : "latest"
+  }
+}
