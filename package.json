@@ -2,6 +2,7 @@
   "name": "kmcapp",
   "version": "0.0.0",
   "private": true,
+  "repository": "https://github.com/izdiharzuhdi/momokaka.git",
   "scripts": {
     "start": "node ./bin/www"
   },
