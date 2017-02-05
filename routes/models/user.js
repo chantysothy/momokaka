@@ -1,5 +1,7 @@
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
+var Promise = require('bluebird'); //ADD THIS LINE
+Promise.promisifyAll(mongoose); //AND THIS LINE
 
 var fbpageSchema = mongoose.Schema({
     name: String,

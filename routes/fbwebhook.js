@@ -110,12 +110,10 @@ module.exports = function (app, passport) {
   });
 
   function findPage(user, data, index, len, userid) {
-    var promise = User.findOne({
+    User.findOneAsync({
       'user._id': { $ne: userid },
       'facebook.page.id': data.id
-    }).exec();
-    
-    promise.then(function (_page) {
+    }).then(function (_page) {
       // if page still does not exist
       if (!_page) {
         var pagedata = {
@@ -202,6 +200,15 @@ module.exports = function (app, passport) {
     }
   });
 
+  app.get('/webhook_comment/:pageid', function (req, res) {
+    var user = req.user;
+    user.facebook.page = undefined;
+    user.save(function (err) {
+      console.log(err);
+      res.redirect('/' + req.user._id + '/profile');
+    });
+  });
+  
   // =====================================
   // Listening to FB changes =============
   // =====================================

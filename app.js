@@ -11,8 +11,8 @@ var flash = require('connect-flash');
 
 var configDB = require('./config/database.js')
 mongoose.connect(configDB.url);
-var Promise = require('bluebird'); //ADD THIS LINE
-Promise.promisifyAll(mongoose); //AND THIS LINE
+// var Promise = require('bluebird'); //ADD THIS LINE
+// Promise.promisifyAll(mongoose); //AND THIS LINE
 // set Promise provider to bluebird
 // mongoose.Promise = require('bluebird');
 
