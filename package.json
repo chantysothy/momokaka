@@ -7,22 +7,24 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "bcrypt-nodejs": "latest",
+    "bluebird": "^3.4.7",
     "body-parser": "~1.15.2",
+    "connect-flash": "latest",
     "cookie-parser": "~1.4.3",
     "debug": "~2.2.0",
     "ejs": "~2.5.2",
     "express": "~4.14.0",
-    "morgan": "~1.7.0",
-    "serve-favicon": "~2.3.0",
     "express-session": "latest",
+    "follow-redirects": "latest",
     "mongoose": "^4.7.8",
+    "morgan": "~1.7.0",
     "passport": "latest",
     "passport-facebook": "latest",
     "passport-local": "^1.0.0",
-    "bcrypt-nodejs": "latest",
-    "connect-flash": "latest",
     "request": "latest",
-    "follow-redirects" : "latest",
-    "express-force-ssl" : "latest"
+    "request-promise": "^4.1.1",
+    "serve-favicon": "~2.3.0",
+    "async": "latest"
   }
 }

@@ -1,10 +1,11 @@
 var request = require('request');
+var rp = require('request-promise');
+var async = require('async')
 
 // load up the user model
 var User = require('../routes/models/user');
 
 module.exports = function (app, passport) {
-
 
   app.get('/:userid/activatewebhook/:no', function (req, res, next) {
     var user = req.user
@@ -87,57 +88,121 @@ module.exports = function (app, passport) {
 
   app.get('/:userid/connect/page', function (req, res, next) {
     var user = req.user;
-    request.get({
+    var userid = req.params.userid
+    rp.get({
       url: 'https://graph.facebook.com/me/accounts',
-      qs: { access_token: user.facebook.token }
-    }, function (err, res) {
-      var body = JSON.parse(res.body);
-      if (!err && res.statusCode == 200) {
-        body.data.forEach(function (data, index) {
-          User.findOne({
-            'user._id': { $ne: user._id },
-            'facebook.page.id': data.id
-          }, function (err, page) {
-            if (err) {
-              console.log(err);
-            }
-            // if page still does not exist
-            if (!page) {
-              var pagedata = {
-                name: data.name,
-                id: data.id,
-                pagetoken: data.access_token,
-                _isAppSubscribed: 'Not Connected'
-              }
-              // update datatabase
-              user.facebook.page[index] = pagedata;
-              user.save(function (err) {
-                console.log(err);
-              });
-            }
-            // if page already exist
-            if (page) {
-              var pagedata = {
-                name: data.name,
-                id: 'None',
-                pagetoken: 'None',
-                _isAppSubscribed: 'Registered under ' + user.facebook.name
-              }
-              // update datatabase
-              user.facebook.page[index] = pagedata;
-              user.save(function (err) {
-                console.log(err);
-              });
-            }
-          });
-        });
-        next(); // go to next callback 
+      qs: { access_token: user.facebook.token },
+      json: true // Automatically parses the JSON string in the response
+    }).then(function (body) {
+      for (var i = 0, len = body.data.length; i < len; i++) {
+        var data = body.data[i];
+        findPage(user, data, i, len, userid);
       }
-    });// end of request
+    })
+      .catch(function (err) {
+        console.log(err);
+      })
+      .then(function () {
+        next();
+      });// end of request
   }, function (req, res) {
-    // respond to /connect/page route
     res.redirect('/' + req.user._id + '/profile');
   });
+
+  function find_Page(user, data, index, len, userid) {
+    async.waterfall([
+      function (done) {
+        User.findOne({
+          'user._id': { $ne: userid },
+          'facebook.page.id': data.id
+        }, function (err, _page) {
+          done(_page);
+        });
+      },
+      function (_page, done) {
+        if (!_page) { 
+          console.log('Successfully')
+        }
+        if (_page) { console.log('success')}
+      }
+    ])
+  }
+
+  function _findPage(user, data, index, len, userid) {
+    var promise = User.findOne({
+      'user._id': { $ne: userid },
+      'facebook.page.id': data.id
+    }).exec();
+
+    promise.then(function (_page) {
+      if (!_page) {
+        var pagedata = {
+          name: data.name,
+          id: data.id,
+          pagetoken: data.access_token,
+          _isAppSubscribed: 'Not Connected'
+        }
+        // update datatabase
+        user.facebook.page[index] = pagedata;
+      }
+      // if page already exist
+      if (_page) {
+        var pagedata = {
+          name: data.name,
+          id: 'None',
+          pagetoken: 'None',
+          _isAppSubscribed: 'Registered under ' + _page.facebook.name
+        }
+        // update datatabase
+        user.facebook.page[index] = pagedata;
+      }
+
+      return user.save(); // returns a promise
+    })
+      // .then(function (page) {
+      //   console.log('updated user: ' + user.name);
+      //   // do something with updated user
+      // })
+      .catch(function (err) {
+        // just need one of these
+        console.log('error:', err);
+      });
+
+  }
+  function findPage(user, data, index, len, userid) {
+    User.findOneAsync({
+      'user._id': { $ne: userid },
+      'facebook.page.id': data.id
+    }).then(function (_page) {
+      // if page still does not exist
+      if (!_page) {
+        var pagedata = {
+          name: data.name,
+          id: data.id,
+          pagetoken: data.access_token,
+          _isAppSubscribed: 'Not Connected'
+        }
+        // update datatabase
+        user.facebook.page[index] = pagedata;
+      }
+      // if page already exist
+      if (_page) {
+        var pagedata = {
+          name: data.name,
+          id: 'None',
+          pagetoken: 'None',
+          _isAppSubscribed: 'Registered under ' + _page.facebook.name
+        }
+        // update datatabase
+        user.facebook.page[index] = pagedata;
+      }
+      if (index == len - 1) {
+        user.save(function (err) {
+          console.log(err);
+        });
+      }
+    }).error(console.error);
+  }
 
   app.get('/:userid/unlink/page', function (req, res) {
     var user = req.user;
@@ -313,3 +378,61 @@ module.exports = function (app, passport) {
     });
   }
 }
+
+  // app.get('/:userid/connect/page', function (req, res, next) {
+  //   var user = req.user;
+  //   request.get({
+  //     url: 'https://graph.facebook.com/me/accounts',
+  //     qs: { access_token: user.facebook.token }
+  //   }, function (err, res) {
+  //     var body = JSON.parse(res.body);
+  //     if (!err && res.statusCode == 200) {
+  //       body.data.forEach(function (data, index) {
+  //         console.log(user._id)
+  //         User.findOne({
+  //           'user._id': { $ne: req.params.userid },
+  //           'facebook.page.id': data.id
+  //         }, function (err, _page) {
+  //           if (err) {
+  //             console.log(err);
+  //           }
+  //           // if page still does not exist
+  //           if (!_page) {
+  //             var pagedata = {
+  //               name: data.name,
+  //               id: data.id,
+  //               pagetoken: data.access_token,
+  //               _isAppSubscribed: 'Not Connected'
+  //             }
+  //             // update datatabase
+  //             user.facebook.page[index] = pagedata;
+  //             user.save(function (err) {
+  //               console.log(err);
+  //             });
+  //           }
+  //           // if page already exist
+  //           if (_page) {
+  //             var pagedata = {
+  //               name: data.name,
+  //               id: 'None',
+  //               pagetoken: 'None',
+  //               _isAppSubscribed: 'Registered under ' + _page.facebook.name
+  //             }
+  //             // update datatabase
+  //             user.facebook.page[index] = pagedata;
+  //             user.save(function (err) {
+  //               console.log(err);
+  //             });
+  //           }
+  //           if (index == body.data.length - 1) {
+  //             next();
+  //           }
+
+  //         }); // end of findOne
+  //       }); // end of forEach
+  //     }
+  //   });
+  // }, function (req, res) {
+  //   // respond to /connect/page route
+  //   res.redirect('/' + req.user._id + '/profile');
+  // });// end of request
