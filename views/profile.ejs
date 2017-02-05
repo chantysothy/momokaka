@@ -43,7 +43,7 @@
             <div class="well">
                 <h3 class="text-primary"><span class="fa fa-facebook"></span> Page Owner</h3>
                 <!-- check if the user has this token (is the user authenticated with this social account) -->
-                <% if (user.facebook.token) { %>
+                <!--<% if (user.facebook.token) { %>-->
                 <p>
                         <strong>name</strong>:
                         <%= user.facebook.name %><br>
@@ -55,10 +55,10 @@
                         <%= user.facebook.email %>
                 </p>
                         <% include ./pages %>
-                <a href="/<%=user._id%>/unlink/facebook" class="btn btn-primary">Unlink Facebook</a>
+                <!--<a href="/<%=user._id%>/unlink/facebook" class="btn btn-primary">Unlink Facebook</a>
                         <% } else { %>
                         <a href="/<%=user._id%>/connect/facebook" class="btn btn-primary">Connect Facebook</a>
-                        <% } %>
+                        <% } %>-->
             </div>
         </div>
 
