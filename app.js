@@ -10,6 +10,7 @@ var passport = require('passport');
 var flash = require('connect-flash');
 
 var configDB = require('./config/database.js')
+mongoose.Promise = global.Promise
 mongoose.connect(configDB.url);
 // set Promise provider to bluebird
 // mongoose.Promise = require('bluebird');
