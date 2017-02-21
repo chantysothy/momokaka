@@ -221,7 +221,7 @@ module.exports = function (app, passport) {
       senderID, timeOfMessage, messageText);
     // refer http://stackoverflow.com/questions/25677743/mongodb-embedded-array-elemmatchprojection-error-issue for clarification
     User.aggregate([
-      { "$match": { 'facebook.page.id': '439701886127042'}},
+      { "$match": { 'facebook.page.id': pageid}},
       { "$unwind": "$facebook.message" },
       { "$match": { "facebook.message.received": messageText} },
       { "$project": {"facebook.message": 1 } }
