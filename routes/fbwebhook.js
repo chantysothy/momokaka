@@ -180,11 +180,9 @@ module.exports = function (app, passport) {
           entry.changes.forEach(function (changes) {
             if (changes.value.item == "comment" && changes.value.verb == "add") {
               // redirect to route to handle the request
-              receivedComment(changes, user.facebook.page[0].pagetoken);
-              console.log(changes.value.message);
+              receivedComment(changes, user.facebook.page[0]);
             } else if (changes.value.item == "post" && changes.value.verb == "add") {
-              receivedComment(changes, user.facebook.page[0].pagetoken);
-              console.log(changes.value.message);
+              receivedComment(changes, user.facebook.page[0]);
             } else {
               console.log("Webhook received %s, %s event by %s", changes.value.item, changes.value.verb, changes.value.sender_name);
             }
@@ -212,22 +210,30 @@ module.exports = function (app, passport) {
   // =====================================
   // Listening to FB changes =============
   // =====================================
-  function receivedComment(changes, pagetoken) {
+  function receivedComment(changes, page) {
     var senderID = changes.value.sender_id;
     var commentID = changes.value.comment_id;
     var timeOfMessage = changes.value.created_time;
     var messageText = changes.value.message;
-
+    var pagetoken = page.pagetoken
+    var pageid = page.id
     console.log("Received message for user %d at %d with message:",
       senderID, timeOfMessage, messageText);
-    User.findOne({ 'facebook.message.received': messageText }, { 'facebook.message.$': 1 }, function (err, user) {
+    // refer http://stackoverflow.com/questions/25677743/mongodb-embedded-array-elemmatchprojection-error-issue for clarification
+    User.aggregate([
+      { "$match": { 'facebook.page.id': '439701886127042'}},
+      { "$unwind": "$facebook.message" },
+      { "$match": { "facebook.message.received": messageText} },
+      { "$project": {"facebook.message": 1 } }
+    ],
+      function (err, message) {
       if (err)
         console.log(err);
-      if (!user)
+      if (message.length == 0)
         console.log("Message %s is not in database", messageText)
-      if (user)
-        callGraphAPI(user.facebook.message[0].send, commentID, pagetoken)
-    });
+      if (message.length == 1)
+        callGraphAPI(message[0].facebook.message.send, commentID, pagetoken)
+      });
     // console.log(JSON.stringify(message));
 
     // var messageId = message.mid;
