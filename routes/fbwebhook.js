@@ -182,7 +182,7 @@ module.exports = function (app, passport) {
               // redirect to route to handle the request
               receivedComment(changes, user.facebook.page[0]);
             } else if (changes.value.item == "post" && changes.value.verb == "add") {
-              receivedComment(changes, user.facebook.page[0]);
+              receivedPost(changes, user.facebook.page[0]);
             } else {
               console.log("Webhook received %s, %s event by %s", changes.value.item, changes.value.verb, changes.value.sender_name);
             }
@@ -259,6 +259,54 @@ module.exports = function (app, passport) {
     // }
   }
 
+  function receivedPost(changes, page) {
+    var senderID = changes.value.sender_id;
+    var commentID = changes.value.post_id;
+    var timeOfMessage = changes.value.created_time;
+    var messageText = changes.value.message;
+    var pagetoken = page.pagetoken
+    var pageid = page.id
+    console.log("Received message for user %d at %d with message:",
+      senderID, timeOfMessage, messageText);
+    // refer http://stackoverflow.com/questions/25677743/mongodb-embedded-array-elemmatchprojection-error-issue for clarification
+    User.aggregate([
+      { "$match": { 'facebook.page.id': pageid } },
+      { "$unwind": "$facebook.message" },
+      { "$match": { "facebook.message.received": messageText } },
+      { "$project": { "facebook.message": 1 } }
+    ],
+      function (err, message) {
+        if (err)
+          console.log(err);
+        if (message.length == 0)
+          console.log("Message %s is not in database", messageText)
+        if (message.length == 1)
+          callGraphAPI(message[0].facebook.message.send, commentID, pagetoken)
+      });
+    // console.log(JSON.stringify(message));
+
+    // var messageId = message.mid;
+
+    // var messageText = message.text;
+    // var messageAttachments = message.attachments;
+
+    // if (messageText) {
+
+    // If we receive a text message, check to see if it matches a keyword
+    // and send back the example. Otherwise, just echo the text we received.
+    // switch (messageText) {
+    //   case 'carousel':
+    //     sendGenericMessage(senderID);
+    //     break;
+    // callGraphAPI(messageText, commentID, pagetoken)
+    //   default:
+    //   sendTextMessage(senderID, messageText);
+
+    // }
+    // } else if (messageAttachments) {
+    //   sendTextMessage(senderID, "Message with attachment received");
+    // }
+  }  
   function sendTextMessage(recipientId, messageText) {
     var messageData = {
       recipient: {
