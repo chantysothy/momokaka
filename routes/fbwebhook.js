@@ -223,7 +223,7 @@ module.exports = function (app, passport) {
     User.aggregate([
       { "$match": { 'facebook.page.id': pageid}},
       { "$unwind": "$facebook.message" },
-      { "$match": { "facebook.message.received": new RegExp(messageText, i)} }, // to make it case insensitive
+      { "$match": { "facebook.message.received": new RegExp(messageText, 'i')} }, // to make it case insensitive
       { "$project": {"facebook.message": 1 } }
     ],
       function (err, message) {
