@@ -223,7 +223,7 @@ module.exports = function (app, passport) {
     User.aggregate([
       { "$match": { 'facebook.page.id': pageid}},
       { "$unwind": "$facebook.message" },
-      { "$match": { "facebook.message.received": messageText} },
+      { "$match": { "facebook.message.received": new RegExp(messageText)} },
       { "$project": {"facebook.message": 1 } }
     ],
       function (err, message) {
@@ -307,6 +307,7 @@ module.exports = function (app, passport) {
     //   sendTextMessage(senderID, "Message with attachment received");
     // }
   }  
+
   function sendTextMessage(recipientId, messageText) {
     var messageData = {
       recipient: {
@@ -316,7 +317,6 @@ module.exports = function (app, passport) {
         text: "Hai " + messageText// sepatutnya sini messageText
       }
     };
-
     callSendAPI(messageData);
   }
 
