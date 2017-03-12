@@ -71,6 +71,7 @@ module.exports = function (app, passport) {
       received: req.body.keyword,
       send: req.body.reply
     }
+    // save the message as last element in the message database array
     user.facebook.message[user.facebook.message.length] = messageData;
     user.save(function (err) {
       res.redirect('/' + req.user._id + '/profile');
@@ -85,66 +86,82 @@ module.exports = function (app, passport) {
     });
   });
 
+  // =====================================
+  // Connect / Disconnect Page(s)=========
+  // =====================================
 
   app.get('/:userid/connect/page', function (req, res, next) {
     var user = req.user;
-    var userid = req.params.userid
-    rp.get({
-      url: 'https://graph.facebook.com/me/accounts',
-      qs: { access_token: user.facebook.token },
-      json: true // Automatically parses the JSON string in the response
-    }).then(function (body) {
-      for (var i = 0, len = body.data.length; i < len; i++) {
-        var data = body.data[i];
-        findPage(user, data, i, len, userid);
-      }
-    })
-      .catch(function (err) {
-        console.log(err);
-      })
-      .then(function () {
-        next();
-      });// end of request
+    var userid = req.params.userid;
+    // using async waterfall
+    async.waterfall([
+      getUserPage(user, userid),
+      updateUserPage
+    ], function (err, user) {
+      user.save(function (err) {
+        return next();
+      });
+    });
+
   }, function (req, res) {
     res.redirect('/' + req.user._id + '/profile');
   });
 
-  function findPage(user, data, index, len, userid) {
-    User.findOneAsync({
-      'user._id': { $ne: userid },
-      'facebook.page.id': data.id
-    }).then(function (_page) {
-      // if page still does not exist
-      if (!_page) {
-        var pagedata = {
-          name: data.name,
-          id: data.id,
-          pagetoken: data.access_token,
-          _isAppSubscribed: 'Not Connected'
-        }
-        // update datatabase
-        user.facebook.page[index] = pagedata;
-      }
-      // if page already exist
-      if (_page) {
-        var pagedata = {
-          name: data.name,
-          id: 'None',
-          pagetoken: 'None',
-          _isAppSubscribed: 'Registered under ' + _page.facebook.name
-        }
-        // update datatabase
-        user.facebook.page[index] = pagedata;
-      }
-      if (index == len - 1) {
-        user.save(function (err) {
-          console.log(err);
-        });
-      }
-    }).error(console.error);
+  function getUserPage(user, userid) {
+    return function (callback) {
+      request.get({
+        url: 'https://graph.facebook.com/me/accounts',
+        qs: { access_token: user.facebook.token },
+        json: true // Automatically parses the JSON string in the response
+      }, function (error, response, body) {
+        var data = body.data;
+        // Pass callback to asyc for updateUserPage function
+        callback(null, user, userid, data);
+      });
+    }
   }
 
-  app.get('/:userid/unlink/page', function (req, res) {
+  function updateUserPage(user, userid, data, callback) {
+    var len = data.length;
+    data.forEach(function (_data, index) {
+      User.findOne({
+        'user._id': { $ne: userid },
+        'facebook.page.id': _data.id
+      }).lean().exec(function (err, _page) {
+
+        if (!_page) {// if page is non existing
+          var pagedata = {
+            name: data[index].name,
+            id: data[index].id,
+            pagetoken: data[index].access_token,
+            _isAppSubscribed: 'Not Connected'
+          }
+          // Push pagedata to database
+          user.facebook.page[index] = pagedata;
+        }
+
+        if (_page) { // if page already exist
+          var pagedata = {
+            name: data[index].name,
+            id: 'None',
+            pagetoken: 'None',
+            _isAppSubscribed: 'Registered under ' + _page.facebook.name
+          }
+          // Push pagedata to database
+          user.facebook.page[index] = pagedata;
+        }
+
+        if (index == len - 1) {
+          // return callback to async to wrapup
+          return callback(null, user);
+        }
+
+      });
+    })
+
+  }
+
+  app.get('/:userid/disconnect/page', function (req, res) {
     var user = req.user;
     user.facebook.page = undefined;
     user.save(function (err) {
@@ -154,7 +171,7 @@ module.exports = function (app, passport) {
   });
 
   // =====================================
-  // FB apps verification ================
+  // FB webhook           ================
   // =====================================
   app.get('/webhook_comment', function (req, res) {
     if (req.query['hub.mode'] === 'subscribe' &&
@@ -206,7 +223,7 @@ module.exports = function (app, passport) {
       res.redirect('/' + req.user._id + '/profile');
     });
   });
-  
+
   // =====================================
   // Listening to FB changes =============
   // =====================================
@@ -221,18 +238,19 @@ module.exports = function (app, passport) {
       senderID, timeOfMessage, messageText);
     // refer http://stackoverflow.com/questions/25677743/mongodb-embedded-array-elemmatchprojection-error-issue for clarification
     User.aggregate([
-      { "$match": { 'facebook.page.id': pageid}},
+      { "$match": { 'facebook.page.id': pageid } },
       { "$unwind": "$facebook.message" },
-      { "$match": { "facebook.message.received": new RegExp(messageText, 'i')} }, // to make it case insensitive
-      { "$project": {"facebook.message": 1 } }
-    ],
+      { "$match": { "facebook.message.received": new RegExp(messageText, 'i') } }, // to make it case insensitive
+      { "$project": { "facebook.message": 1 } }
+    ]).lean()
+      .exec(
       function (err, message) {
-      if (err)
-        console.log(err);
-      if (message.length == 0)
-        console.log("Message %s is not in database", messageText)
-      if (message.length == 1)
-        callGraphAPI(message[0].facebook.message.send, commentID, pagetoken)
+        if (err)
+          console.log(err);
+        if (message.length == 0)
+          console.log("Message %s is not in database", messageText)
+        if (message.length == 1)
+          callGraphAPI(message[0].facebook.message.send, commentID, pagetoken)
       });
     // console.log(JSON.stringify(message));
 
@@ -306,7 +324,7 @@ module.exports = function (app, passport) {
     // } else if (messageAttachments) {
     //   sendTextMessage(senderID, "Message with attachment received");
     // }
-  }  
+  }
 
   function sendTextMessage(recipientId, messageText) {
     var messageData = {
