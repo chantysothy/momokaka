@@ -8,67 +8,80 @@ var User = require('../routes/models/user');
 module.exports = function (app, passport) {
 
   app.get('/:userid/activatewebhook/:no', function (req, res, next) {
-    var user = req.user
+    var user = req.user;
     var page = user.facebook.page[req.params.no];
+    // ref : https://developers.facebook.com/docs/messenger-platform/webhook-reference
     request({
       uri: 'https://graph.facebook.com/v2.8/' + page.id + '/subscribed_apps',
       method: 'POST',
       qs: { access_token: page.pagetoken }
-    }, function (error, response, body) {
-      if (!error && JSON.parse(body).success == true) {
-        page._isAppSubscribed = 'Connected'
-        user.save(function (err) {
-          console.log(err);
-        });
-        next(); // go to next callback
-      };
-    });
-  }, function (req, res) {
+    },
+      function (error, response, body) {
+        if (error) { console.log(err) }
+        if (!error && JSON.parse(body).success == true) {
+          page._isAppSubscribed = 'Connected'
+          user.save(function (err) {
+            if (err) { console.log(err); }
+          });
+          return next(); // go to next callback
+        }
+      });
+  },
+    function (req, res) {
     res.redirect('/' + req.user._id + '/profile');
-  });
+    }
+  );
 
   app.get('/:userid/deactivatewebhook/:no', function (req, res, next) {
-    var user = req.user
+    var user = req.user;
     var page = user.facebook.page[req.params.no];
+    // ref : https://developers.facebook.com/docs/messenger-platform/webhook-reference
     request({
       uri: 'https://graph.facebook.com/v2.8/' + page.id + '/subscribed_apps',
       method: 'DELETE',
       qs: { access_token: page.pagetoken }
-    }, function (error, response, body) {
-      if (!error && JSON.parse(body).success == true) {
-        console.log(JSON.parse(body).success);
-        page._isAppSubscribed = 'Not Connected'
-        user.save(function (err) {
-          console.log(err);
-        });
-        next(); // go to next callback
-      };
-    });
-  }, function (req, res) {
+    },
+      function (error, response, body) {
+        if (error) { console.log(err); }
+        if (!error && JSON.parse(body).success == true) {
+          page._isAppSubscribed = 'Not Connected';
+          user.save(function (err) {
+            if (err) { console.log(err); }
+          });
+          return next(); // go to next callback
+        }
+      });
+  },
+    function (req, res) {
     res.redirect('/' + req.user._id + '/profile');
-  });
+    }
+  );
 
   app.post('/:userid/savemessage', function (req, res, next) {
     var user = req.user;
-    // checking datatabase
+    // ref http://stackoverflow.com/questions/13460765/findone-subdocument-in-mongoose
     User.findOne({
       'facebook.message.received': req.body.keyword,
       '_id': req.params.userid
-    }, { 'facebook.message.$': 1 }, function (err, message) {
+    })
+      .select({ 'facebook.message.$': 1 })
+      .lean()
+      .exec(function (err, message) {
       if (err) { console.log(err); }
       // if keyword still not exist
       if (!message) {
-        next() // go to next callback to store values
+        next(); // go to next callback to store values
       }
       // if keyword already exist
       if (message) {
         res.redirect('/' + req.user._id + '/profile');
       }
     });
-  }, function (req, res) {
+  },
+    function (req, res) {
     var user = req.user;
     var messageData = {
-      received: req.body.keyword,
+      received: req.body.keyword.toLowerCase(),
       send: req.body.reply
     }
     // save the message as last element in the message database array
@@ -93,17 +106,19 @@ module.exports = function (app, passport) {
   app.get('/:userid/connect/page', function (req, res, next) {
     var user = req.user;
     var userid = req.params.userid;
+
     // using async waterfall
     async.waterfall([
       getUserPage(user, userid),
       updateUserPage
-    ], function (err, user) {
+    ],
+      function (err, user) {
       user.save(function (err) {
         return next();
       });
     });
-
-  }, function (req, res) {
+  },
+    function (req, res) {
     res.redirect('/' + req.user._id + '/profile');
   });
 
@@ -127,45 +142,46 @@ module.exports = function (app, passport) {
       User.findOne({
         'user._id': { $ne: userid },
         'facebook.page.id': _data.id
-      }).lean().exec(function (err, _page) {
-
-        if (!_page) {// if page is non existing
-          var pagedata = {
-            name: data[index].name,
-            id: data[index].id,
-            pagetoken: data[index].access_token,
-            _isAppSubscribed: 'Not Connected'
+      })
+        .lean()
+        .exec(function (err, _page) {
+          if (err) { console.log(err) }
+          if (!_page) {// if page is non existing
+            var pagedata = {
+              name: data[index].name,
+              id: data[index].id,
+              pagetoken: data[index].access_token,
+              _isAppSubscribed: 'Not Connected'
+            }
+            // Push pagedata to database
+            user.facebook.page[index] = pagedata;
           }
-          // Push pagedata to database
-          user.facebook.page[index] = pagedata;
-        }
 
-        if (_page) { // if page already exist
-          var pagedata = {
-            name: data[index].name,
-            id: 'None',
-            pagetoken: 'None',
-            _isAppSubscribed: 'Registered under ' + _page.facebook.name
+          if (_page) { // if page already exist
+            var pagedata = {
+              name: data[index].name,
+              id: 'None',
+              pagetoken: 'None',
+              _isAppSubscribed: 'Registered under ' + _page.facebook.name
+            }
+            // Push pagedata to database
+            user.facebook.page[index] = pagedata;
           }
-          // Push pagedata to database
-          user.facebook.page[index] = pagedata;
-        }
 
-        if (index == len - 1) {
-          // return callback to async to wrapup
-          return callback(null, user);
-        }
+          if (index == len - 1) {
+            // return callback to async to wrapup
+            return callback(null, user);
+          }
 
-      });
-    })
-
+        });
+    });
   }
 
   app.get('/:userid/disconnect/page', function (req, res) {
     var user = req.user;
     user.facebook.page = undefined;
     user.save(function (err) {
-      console.log(err);
+      if(err){console.log(err)}
       res.redirect('/' + req.user._id + '/profile');
     });
   });
@@ -192,7 +208,11 @@ module.exports = function (app, passport) {
       data.entry.forEach(function (entry) {
         var pageID = entry.id;
         var timeOfEvent = entry.time;
-        User.findOne({ 'facebook.page.id': pageID }, { 'facebook.page.$': 1 }, function (err, user) {
+        User
+          .findOne({ 'facebook.page.id': pageID })
+          .select({ 'facebook.page.$': 1 })
+          .lean()
+          .exec(function (err, user) {
           // Iterate over each messaging event
           entry.changes.forEach(function (changes) {
             if (changes.value.item == "comment" && changes.value.verb == "add") {
@@ -240,11 +260,9 @@ module.exports = function (app, passport) {
     User.aggregate([
       { "$match": { 'facebook.page.id': pageid } },
       { "$unwind": "$facebook.message" },
-      { "$match": { "facebook.message.received": new RegExp(messageText, 'i') } }, // to make it case insensitive
+      { "$match": { "facebook.message.received": messageText.toLowerCase() } }, // to make it case insensitive
       { "$project": { "facebook.message": 1 } }
-    ]).lean()
-      .exec(
-      function (err, message) {
+    ]).exec(function (err, message) {
         if (err)
           console.log(err);
         if (message.length == 0)
@@ -290,10 +308,9 @@ module.exports = function (app, passport) {
     User.aggregate([
       { "$match": { 'facebook.page.id': pageid } },
       { "$unwind": "$facebook.message" },
-      { "$match": { "facebook.message.received": messageText } },
+      { "$match": { "facebook.message.received": messageText.toLowerCase() } },
       { "$project": { "facebook.message": 1 } }
-    ],
-      function (err, message) {
+    ]).exec(function (err, message) {
         if (err)
           console.log(err);
         if (message.length == 0)
@@ -367,16 +384,12 @@ module.exports = function (app, passport) {
         access_token: token
       },
       method: 'POST'
-      // json: messageData
-
     }, function (error, response, body) {
       if (!error && response.statusCode == 200) {
-        var recipientId = body.recipient_id;
-        var messageId = body.message_id;
-        console.log("Successfully sent generic message with id %s to recipient %s",
-          messageId, recipientId);
+        console.log("Successfully sent generic message with id %s",
+          JSON.parse(body).id);
       } else {
-        var error = JSON.parse(body)
+        var error = JSON.parse(body);
         console.error("Unable to send message: %d %s", response.statusCode, response.statusMessage);
         console.error("Error : ", error.error.type, error.error.message);
       }
