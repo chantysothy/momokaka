@@ -15,7 +15,8 @@ module.exports = function (app, passport) {
 
     app.get('/:userid/profile', isLoggedIn, function (req, res) {
         res.render('profile.ejs', {
-            user: req.user // get the user out of session and pass to template
+            user: req.user, // get the user out of session and pass to template
+            msgerr: req.flash('err')
         });
     });
 
@@ -44,7 +45,7 @@ module.exports = function (app, passport) {
         failureRedirect: '/signup',
         failureFlash: true
     }));
-
+    
     // =====================================
     // LOCAL LOGIN =========================
     // =====================================

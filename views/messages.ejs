@@ -11,32 +11,36 @@
         <input class="form-control" type="text" placeholder="Reply Message" name="reply">
     </div>
     <button type="submit" class="btn btn-default">Save</button>
+    <% if (msgerr.length > 0) { %>
+        <div class="alert alert-danger">
+            <%= msgerr %>
+        </div>
+        <% } %>
 </form>
 
-<% if (user.facebook.message[0]) { %>
 <table class="table table-bordered">
-<p>
-    <tr>
-        <th>Keyword</th>
-        <th>Reply</th>
-        <th></th>
-    </tr>
-
-    <% for (var i = 0; i < user.facebook.message.length; i++) { %>
+    <p>
         <tr>
-            <td>
-                <%= user.facebook.message[i].received %>
-            </td>
-            <td>
-                <%= user.facebook.message[i].send %>
-            </td>
-            <td>
-                <% if (user.facebook.message[i]) { %>
-                    <a href='/<%=user._id%>/removemessage/<%=i%>' class="btn btn-default btn-xs">Remove</a>
-                    <% } %>
-            </td>
+            <th>Keyword</th>
+            <th>Reply</th>
+            <th></th>
         </tr>
-        <% } %>
-<% } %>
-</p>
+        <% if (user.facebook.message[0]) { %>
+            <% for (var i = 0; i < user.facebook.message.length; i++) { %>
+                <tr>
+                    <td>
+                        <%= user.facebook.message[i].received %>
+                    </td>
+                    <td>
+                        <%= user.facebook.message[i].send %>
+                    </td>
+                    <td>
+                        <% if (user.facebook.message[i]) { %>
+                            <a href='/<%=user._id%>/removemessage/<%=i%>' class="btn btn-default btn-xs">Remove</a>
+                            <% } %>
+                    </td>
+                </tr>
+                <% } %>
+                    <% } %>
+    </p>
 </table>
