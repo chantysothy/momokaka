@@ -5,7 +5,7 @@ var async = require('async')
 // load up the user model
 var User = require('../routes/models/user');
 
-module.exports = function (app, passport) {
+module.exports = function (app) {
 
   app.get('/:userid/activatewebhook/:no', function (req, res, next) {
     var user = req.user;
@@ -31,7 +31,7 @@ module.exports = function (app, passport) {
     res.redirect('/' + req.user._id + '/profile');
     }
   );
-
+  
   app.get('/:userid/deactivatewebhook/:no', function (req, res, next) {
     var user = req.user;
     var page = user.facebook.page[req.params.no];
@@ -74,10 +74,11 @@ module.exports = function (app, passport) {
       }
       // if keyword already exist
       if (message) {
+        req.flash('err', 'Received message already existed');
         res.redirect('/' + req.user._id + '/profile');
       }
     });
-  },
+  },      
     function (req, res) {
     var user = req.user;
     var messageData = {
@@ -102,7 +103,7 @@ module.exports = function (app, passport) {
   // =====================================
   // Connect / Disconnect Page(s)=========
   // =====================================
-
+  
   app.get('/:userid/connect/page', function (req, res, next) {
     var user = req.user;
     var userid = req.params.userid;

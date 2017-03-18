@@ -46,7 +46,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // routes ======================================================================
 require('./routes/routes.js')(app, passport);
-require('./routes/fbwebhook.js')(app, passport);
+require('./routes/fbwebhook.js')(app);
 
 
 // catch 404 and forward to error handler
