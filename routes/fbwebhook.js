@@ -33,6 +33,7 @@ module.exports = function (app) {
           .lean()
           .exec(function (err, user) {
           // Iterate over each messaging event
+          // entry.messaging  
           entry.changes.forEach(function (changes) {
             if (changes.value.item == "comment" && changes.value.verb == "add") {
               // redirect to route to handle the request

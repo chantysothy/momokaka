@@ -123,13 +123,18 @@ module.exports = function (app) {
         // using async waterfall
         async.waterfall([
             getUserPage(user, userid),
-            updateUserPage
-        ],
-            function (err, user) {
+            updateUserPage,
+            function (user) {
                 user.save(function (err) {
                     return next();
                 });
-            });
+            }
+        ],
+            function (err) {
+                console.log(err);
+                return next();
+            }
+        );
     },
         function (req, res) {
             res.redirect('/' + req.user._id + '/profile');
@@ -142,9 +147,11 @@ module.exports = function (app) {
                 qs: { access_token: user.facebook.token },
                 json: true // Automatically parses the JSON string in the response
             }, function (error, response, body) {
+                // catch FB OAuth Error
+                error = error || callback(body.error.message);
                 var data = body.data;
                 // Pass callback to asyc for updateUserPage function
-                callback(null, user, userid, data);
+                return callback(error, user, userid, data);
             });
         }
     }
