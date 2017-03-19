@@ -138,8 +138,9 @@ module.exports = function (app) {
     },
         function (req, res) {
             res.redirect('/' + req.user._id + '/profile');
-        });
-
+        }
+    );
+    
     function getUserPage(user, userid) {
         return function (callback) {
             request.get({
@@ -148,11 +149,11 @@ module.exports = function (app) {
                 json: true // Automatically parses the JSON string in the response
             }, function (error, response, body) {
                 // catch FB OAuth Error
-                error = error || callback(body.error.message);
+                if (body.error) { return callback(body.error.message)};
                 var data = body.data;
                 // Pass callback to asyc for updateUserPage function
                 return callback(error, user, userid, data);
-            });
+                });
         }
     }
 
