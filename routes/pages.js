@@ -4,7 +4,7 @@ var async = require('async');
 // load up the user model
 var User = require('../routes/models/user');
 
-module.exports = function (app) { 
+module.exports = function (app) {
 
     // =====================================
     // Managing Page Webhook(s)    =========
@@ -24,18 +24,13 @@ module.exports = function (app) {
                 if (error) { console.log(err) }
                 if (!error && JSON.parse(body).success == true) {
                     page._isAppSubscribed = 'Connected'
-       
                     user.save(function (err) {
                         if (err) { console.log(err); }
                     });
-                    return next(); // go to next callback
+                    return res.redirect('/' + req.user._id + '/profile');
                 }
             });
-    },
-        function (req, res) {
-            res.redirect('/' + req.user._id + '/profile');
-        }
-    );
+    });
 
     // Deactivate webhook from page
     app.get('/:userid/deactivatewebhook/:no', function (req, res, next) {
@@ -54,14 +49,10 @@ module.exports = function (app) {
                     user.save(function (err) {
                         if (err) { console.log(err); }
                     });
-                    return next(); // go to next callback
+                    return res.redirect('/' + req.user._id + '/profile');
                 }
             });
-    },
-        function (req, res) {
-            res.redirect('/' + req.user._id + '/profile');
-        }
-    );    
+    });
 
     // =====================================
     // Managing Message(s)         =========
@@ -81,34 +72,30 @@ module.exports = function (app) {
                 if (err) { console.log(err); }
                 // if keyword still not exist
                 if (!message) {
-                    next(); // go to next callback to store values
+                    var messageData = {
+                        received: req.body.keyword.toLowerCase(),
+                        send: req.body.reply
+                    }
+                    // save the message as last element in the message database array
+                    user.facebook.message[user.facebook.message.length] = messageData;
+                    user.save(function (err) {
+                        return res.redirect('/' + req.user._id + '/profile');
+                    });
                 }
                 // if keyword already exist
                 if (message) {
-                    req.flash('err', 'Received message already existed');
-                    res.redirect('/' + req.user._id + '/profile');
+                    req.flash('err', 'Received message already exists');
+                    return res.redirect('/' + req.user._id + '/profile');
                 }
             });
-    },
-        function (req, res) {
-            var user = req.user;
-            var messageData = {
-                received: req.body.keyword.toLowerCase(),
-                send: req.body.reply
-            }
-            // save the message as last element in the message database array
-            user.facebook.message[user.facebook.message.length] = messageData;
-            user.save(function (err) {
-                res.redirect('/' + req.user._id + '/profile');
-            });
-        });
-    
+    });
+
     // Delete keywords and respective replies 
     app.get('/:userid/removemessage/:no', function (req, res, next) {
         var user = req.user;
         user.facebook.message[req.params.no].remove();
         user.save(function (err) {
-            res.redirect('/' + req.user._id + '/profile');
+            return res.redirect('/' + req.user._id + '/profile');
         });
     });
 
@@ -124,79 +111,22 @@ module.exports = function (app) {
         async.waterfall([
             getUserPage(user, userid),
             updateUserPage,
-            function (user) {
-                user.save(function (err) {
-                    return next();
-                });
-            }
-        ],
+            saveUser],
             function (err) {
-                console.log(err);
-                return next();
-            }
-        );
-    },
-        function (req, res) {
-            res.redirect('/' + req.user._id + '/profile');
-        }
-    );
-    
-    function getUserPage(user, userid) {
-        return function (callback) {
-            request.get({
-                url: 'https://graph.facebook.com/me/accounts',
-                qs: { access_token: user.facebook.token },
-                json: true // Automatically parses the JSON string in the response
-            }, function (error, response, body) {
-                // catch FB OAuth Error
-                if (body.error) { return callback(body.error.message)};
-                var data = body.data;
-                // Pass callback to asyc for updateUserPage function
-                return callback(error, user, userid, data);
-                });
-        }
-    }
+                if (err) {
+                    // user has manually removed the app from page messaging setting
+                    // a new token is required to re-attach the app
+                    user.facebook.token = undefined;
+                    user.save();
+                    // ideally to give a pop-up message to note the user about this error
+                    return res.redirect('/');
+                };
+                // finalising connect page method
+                return res.redirect('/' + req.user._id + '/profile');
+            });
 
-    function updateUserPage(user, userid, data, callback) {
-        var len = data.length;
-        data.forEach(function (_data, index) {
-            User.findOne({
-                'user._id': { $ne: userid },
-                'facebook.page.id': _data.id
-            })
-                .lean()
-                .exec(function (err, _page) {
-                    if (err) { console.log(err) }
-                    if (!_page) {// if page is non existing
-                        var pagedata = {
-                            name: data[index].name,
-                            id: data[index].id,
-                            pagetoken: data[index].access_token,
-                            _isAppSubscribed: 'Not Connected'
-                        }
-                        // Push pagedata to database
-                        user.facebook.page[index] = pagedata;
-                    }
+    });
 
-                    if (_page) { // if page already exist
-                        var pagedata = {
-                            name: data[index].name,
-                            id: 'None',
-                            pagetoken: 'None',
-                            _isAppSubscribed: 'Registered under ' + _page.facebook.name
-                        }
-                        // Push pagedata to database
-                        user.facebook.page[index] = pagedata;
-                    }
-
-                    if (index == len - 1) {
-                        // return callback to async to wrapup
-                        return callback(null, user);
-                    }
-
-                });
-        });
-    }
 
     app.get('/:userid/disconnect/page', function (req, res) {
         var user = req.user;
@@ -206,4 +136,68 @@ module.exports = function (app) {
             res.redirect('/' + req.user._id + '/profile');
         });
     });
+}
+
+
+function getUserPage(user, userid) {
+    return function (callback) {
+        request.get({
+            url: 'https://graph.facebook.com/me/accounts',
+            qs: { access_token: user.facebook.token },
+            json: true // Automatically parses the JSON string in the response
+        }, function (error, response, body) {
+            // catch FB OAuth Error
+            if (body.error) { return callback(body.error.message) };
+            var data = body.data;
+            // Pass callback to asyc for updateUserPage function
+            return callback(error, user, userid, data);
+        });
+    }
+}
+
+function updateUserPage(user, userid, data, callback) {
+    var len = data.length;
+    data.forEach(function (_data, index) {
+        User.findOne({
+            'user._id': { $ne: userid },
+            'facebook.page.id': _data.id
+        })
+            .lean()
+            .exec(function (err, _page) {
+                if (err) { console.log(err) }
+                if (!_page) {// if page is non existing
+                    var pagedata = {
+                        name: data[index].name,
+                        id: data[index].id,
+                        pagetoken: data[index].access_token,
+                        _isAppSubscribed: 'Not Connected'
+                    }
+                    // Push pagedata to database
+                    user.facebook.page[index] = pagedata;
+                }
+                
+                if (_page) { // if page already exist
+                    var pagedata = {
+                        name: data[index].name,
+                        id: 'None',
+                        pagetoken: 'None',
+                        _isAppSubscribed: 'Registered under ' + _page.facebook.name
+                    }
+                    // Push pagedata to database
+                    user.facebook.page[index] = pagedata;
+                }
+
+                if (index == len - 1) {
+                    // return callback to async to wrapup
+                    return callback(null, user);
+                }
+            });
+    });
+}
+
+function saveUser(user, callback) {
+    user.save(function (err) {
+        if (err) { console.log(err); }
+    });
+    return callback(null);
 }

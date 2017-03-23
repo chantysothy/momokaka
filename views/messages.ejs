@@ -1,5 +1,5 @@
 <h3 class="text-primary"><span class="fa fa-facebook">
-            </span> Webhook</h3>
+            </span> Feed</h3>
 
 <form action="/<%=user._id%>/savemessage" method="post" class="form-inline">
     <div class="input-group margin-bottom-sm">
@@ -11,9 +11,9 @@
         <input class="form-control" type="text" placeholder="Reply Message" name="reply">
     </div>
     <button type="submit" class="btn btn-default">Save</button>
-    <% if (msgerr.length > 0) { %>
+    <% if (err.length > 0) { %>
         <div class="alert alert-danger">
-            <%= msgerr %>
+            <%= err %>
         </div>
         <% } %>
 </form>
