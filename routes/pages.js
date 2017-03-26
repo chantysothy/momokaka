@@ -157,6 +157,7 @@ function getUserPage(user, userid) {
 
 function updateUserPage(user, userid, data, callback) {
     var len = data.length;
+    // ref http://stackoverflow.com/questions/21829789/node-mongoose-find-query-in-loop-not-working
     data.forEach(function (_data, index) {
         User.findOne({
             'user._id': { $ne: userid },

@@ -20,42 +20,6 @@ module.exports = function (app) {
     }
   });
 
-  app.post('/webhook_comment1', function (req, res) {
-    var data = req.body;
-    // Make sure this is a page subscription
-    if (data.object === 'page') {
-      // Iterate over each entry - there may be multiple if batched
-      data.entry.forEach(function (entry) {
-        var pageID = entry.id;
-        var timeOfEvent = entry.time;
-        User
-          .findOne({ 'facebook.page.id': pageID })
-          .select({ 'facebook.page.$': 1 })
-          .lean()
-          .exec(function (err, user) {
-            // Iterate over each messaging event
-            // entry.messaging  
-            entry.changes.forEach(function (changes) {
-              if (changes.value.item == "comment" && changes.value.verb == "add") {
-                // redirect to route to handle the request
-                receivedComment(changes, user.facebook.page[0]);
-              } else if (changes.value.item == "post" && changes.value.verb == "add") {
-                receivedPost(changes, user.facebook.page[0]);
-              } else {
-                console.log("Webhook received %s, %s event by %s", changes.value.item, changes.value.verb, changes.value.sender_name);
-              }
-            });
-          });
-      });
-      // Assume all went well.
-      //
-      // You must send back a 200, within 20 seconds, to let us know
-      // you've successfully received the callback. Otherwise, the request
-      // will time out and we will keep trying to resend.
-      res.sendStatus(200);
-    }
-  });
-
   app.post('/webhook_comment', function (req, res) {
     var data = req.body;
     // Make sure this is a page subscription
@@ -77,7 +41,7 @@ module.exports = function (app) {
       // You must send back a 200, within 20 seconds, to let us know
       // you've successfully received the callback. Otherwise, the request
       // will time out and we will keep trying to resend.
-      res.sendStatus(200);
+      return res.sendStatus(200);
     }
   });
 
