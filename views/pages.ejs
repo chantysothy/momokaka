@@ -6,38 +6,43 @@
 
         <table class="table table-bordered">
             <p>
-            <tr>
-                <th>Page Name</th>
-                <th>ID</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-
-            <% for (var i = 0; i < user.facebook.page.length; i++) { %>
                 <tr>
-                    <td>
-                        <%= user.facebook.page[i].name %>
-                    </td>
-                    <td>
-                        <%= user.facebook.page[i].id %>
-                    </td>
-                    <td>
-                        <%= user.facebook.page[i]._isAppSubscribed %>
-                    </td>
-                    <td>
-                        <% if (user.facebook.page[i]._isAppSubscribed == 'Not Connected') { %>
-                            <a href='/<%=user._id%>/activatewebhook/<%=i%>' class="btn btn-default btn-xs">Activate</a>
-                            <% } if (user.facebook.page[i]._isAppSubscribed == 'Connected') { %>
-                                <a href='/<%=user._id%>/deactivatewebhook/<%=i%>' class="btn btn-default btn-xs">Deactivate</a>
-                                <% } %>
-                    </td>
+                    <th>Page Name</th>
+                    <th>ID</th>
+                    <th>Status</th>
+                    <th>Action</th>
                 </tr>
-                <% } %>
-                </p>
+
+                <% for (var i = 0; i < user.facebook.page.length; i++) { %>
+                    <tr>
+                        <td>
+                            <%= user.facebook.page[i].name %>
+                        </td>
+                        <td>
+                            <%= user.facebook.page[i].id %>
+                        </td>
+                        <td>
+                            <%= user.facebook.page[i]._isAppSubscribed %>
+                        </td>
+                        <td>
+                            <% if (user.facebook.page[i]._isAppSubscribed == 'Not Connected') { %>
+                                <a href='/<%=user._id%>/activatewebhook/<%=i%>' class="btn btn-default btn-xs">Activate</a>
+                                <% } if (user.facebook.page[i]._isAppSubscribed == 'Connected') { %>
+                                    <a href='/<%=user._id%>/deactivatewebhook/<%=i%>' class="btn btn-default btn-xs">Deactivate</a>
+                                    <% } %>
+                        </td>
+                    </tr>
+                    <% } %>
+            </p>
         </table>
         <% include ./messages %>
 
     </div>
     <% } else { %>
         <a href="/<%=user._id%>/connect/page" class="btn btn-primary">Connect Page</a>
-        <% } %>
+        <% if (err.length > 0) { %>
+            <div class="alert alert-danger">
+                <%= err %>
+            </div>
+            <% } %>
+                <% } %>

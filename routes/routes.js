@@ -10,13 +10,13 @@ module.exports = function (app, passport) {
     // =====================================
 
     app.get('/profile', isLoggedIn, function (req, res) {
-        res.redirect('/'+ req.user._id + '/profile')
+        res.redirect('/' + req.user._id + '/profile')
     });
 
     app.get('/:userid/profile', isLoggedIn, function (req, res) {
         res.render('profile.ejs', {
             user: req.user, // get the user out of session and pass to template
-            msgerr: req.flash('err')
+            err: req.flash('err')
         });
     });
 
@@ -45,7 +45,7 @@ module.exports = function (app, passport) {
         failureRedirect: '/signup',
         failureFlash: true
     }));
-    
+
     // =====================================
     // LOCAL LOGIN =========================
     // =====================================
@@ -65,7 +65,13 @@ module.exports = function (app, passport) {
     // =====================================
     // route for facebook authentication and login
     app.get('/auth/facebook', passport.authenticate('facebook', {
-        scope: ['email', 'manage_pages', 'publish_pages']
+        scope: [
+            'email',
+            'manage_pages',
+            'publish_pages',
+            'pages_messaging',
+            'read_page_mailboxes'
+        ]
     }));
 
     // handle the callback after facebook has authenticated the user
@@ -79,7 +85,7 @@ module.exports = function (app, passport) {
         passport.authenticate('facebook', { failureRedirect: '/' }),
         function (req, res) {
             // Successful authentication, redirect home.
-            res.redirect('/'+ req.user._id + '/profile');//, req.user.facebook.id);
+            res.redirect('/' + req.user._id + '/profile');//, req.user.facebook.id);
         }
     );
 
@@ -115,8 +121,8 @@ module.exports = function (app, passport) {
     // facebook -------------------------------
 
     // send to facebook to do the authentication
-    app.get('/:userid/connect/facebook', passport.authenticate('facebook', 
-    { scope: ['email', 'manage_pages', 'publish_pages'] }));
+    app.get('/:userid/connect/facebook', passport.authenticate('facebook',
+        { scope: ['email', 'manage_pages', 'publish_pages'] }));
 
     // handle the callback after facebook has authorized the user
     app.get('/:userid/connect/facebook/callback',
@@ -139,7 +145,7 @@ module.exports = function (app, passport) {
         user.local.username = undefined;
         user.local.password = undefined;
         user.save(function (err) {
-            res.redirect('/'+ req.user._id + '/profile');
+            res.redirect('/' + req.user._id + '/profile');
         });
     });
 
@@ -148,7 +154,7 @@ module.exports = function (app, passport) {
         var user = req.user;
         user.facebook = undefined;
         user.save(function (err) {
-            res.redirect('/'+ req.user._id + '/profile');
+            res.redirect('/' + req.user._id + '/profile');
         });
     });
 }

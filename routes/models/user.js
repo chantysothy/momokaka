@@ -5,13 +5,20 @@ Promise.promisifyAll(mongoose); //AND THIS LINE
 
 var fbpageSchema = mongoose.Schema({
     name: String,
-    id: {type:String, unique:true},
+    id: { type: String },
     pagetoken: String,
-    _isAppSubscribed: {type:String, default:"Not Connected"}
+    _isAppSubscribed: { type: String, default: "Not Connected" }
 });
 
-var msgSchema = mongoose.Schema({
+var feedSchema = mongoose.Schema({
     received: String,
+    send: String,
+    imageURL: String,
+    replyMSG: String
+});
+
+var messengerSchema = mongoose.Schema({
+    _isConnected: { type: Boolean, default: false },
     send: String
 });
 
@@ -26,7 +33,7 @@ var userSchema = mongoose.Schema({
         email: String,
         name: String,
         page: [fbpageSchema],
-        message: [msgSchema]
+        feed: [feedSchema]
     }
 });
 

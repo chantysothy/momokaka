@@ -11,7 +11,7 @@ var flash = require('connect-flash');
 
 var configDB = require('./config/database.js')
 mongoose.Promise = global.Promise
-mongoose.connect(configDB.url);
+mongoose.connect(configDB.url, configDB.options);
 // set Promise provider to bluebird
 // mongoose.Promise = require('bluebird');
 
@@ -41,7 +41,6 @@ app.use(passport.initialize());
 app.use(passport.session());// persistent login sessions
 app.use(flash());// use connect-flash for flash messages stored in session
 app.use(express.static(path.join(__dirname, 'public')));
-
 
 
 // routes ======================================================================
