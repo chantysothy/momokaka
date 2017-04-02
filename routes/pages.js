@@ -1,6 +1,6 @@
 var request = require('request');
 var async = require('async');
-
+var fbRequest = require('./fbRequest')
 // load up the user model
 var User = require('../routes/models/user');
 
@@ -12,17 +12,14 @@ module.exports = function (app) {
 
     //  Activate webhook to pages
     app.get('/:userid/activatewebhook/:no', function (req, res, next) {
+        var self = this;
         var user = req.user;
         var page = user.facebook.page[req.params.no];
         // ref : https://developers.facebook.com/docs/messenger-platform/webhook-reference
-        request({
-            uri: 'https://graph.facebook.com/v2.8/' + page.id + '/subscribed_apps',
-            method: 'POST',
-            qs: { access_token: page.pagetoken }
-        },
+        pageWebhook(page, 'POST',
             function (error, response, body) {
-                if (error) { console.log(err) }
-                if (!error && JSON.parse(body).success == true) {
+                if (error || body.error) { return console.error(error || body.error); }
+                if (!error && body.success == true) {
                     page._isAppSubscribed = 'Connected'
                     user.save(function (err) {
                         if (err) { console.log(err); }
@@ -36,15 +33,11 @@ module.exports = function (app) {
     app.get('/:userid/deactivatewebhook/:no', function (req, res, next) {
         var user = req.user;
         var page = user.facebook.page[req.params.no];
-        // ref : https://developers.facebook.com/docs/messenger-platform/webhook-reference
-        request({
-            uri: 'https://graph.facebook.com/v2.8/' + page.id + '/subscribed_apps',
-            method: 'DELETE',
-            qs: { access_token: page.pagetoken }
-        },
+
+        pageWebhook(page, 'DELETE',
             function (error, response, body) {
-                if (error) { console.log(err); }
-                if (!error && JSON.parse(body).success == true) {
+                if (error || body.error) { return console.error(error || body.error); }
+                if (!error && body.success == true) {
                     page._isAppSubscribed = 'Not Connected';
                     user.save(function (err) {
                         if (err) { console.log(err); }
@@ -54,46 +47,58 @@ module.exports = function (app) {
             });
     });
 
+    function pageWebhook(page, method, callback) {
+        return fbRequest.fbGraphAPI(
+            { access_token: page.pagetoken },
+            {
+                objectID: page.id,
+                edge: '/subscribed_apps',
+                method: method
+            }, callback
+        );
+    }
     // =====================================
     // Managing Message(s)         =========
     // =====================================
 
     // Save keywords and respective replies 
-    app.post('/:userid/savemessage', function (req, res, next) {
+    app.post('/:userid/savefeed', function (req, res, next) {
         var user = req.user;
         // ref http://stackoverflow.com/questions/13460765/findone-subdocument-in-mongoose
         User.findOne({
-            'facebook.message.received': req.body.keyword.toLowerCase(),
+            'facebook.feed.received': req.body.keyword.toLowerCase(),
             '_id': req.params.userid
         })
-            .select({ 'facebook.message.$': 1 })
+            .select({ 'facebook.feed.$': 1 })
             .lean()
-            .exec(function (err, message) {
+            .exec(function (err, feed) {
                 if (err) { console.log(err); }
                 // if keyword still not exist
-                if (!message) {
-                    var messageData = {
+                if (!feed) {
+                    var feedData = {
                         received: req.body.keyword.toLowerCase(),
-                        send: req.body.reply
+                        send: req.body.reply,
+                        imageURL: req.body.imageurl,
+                        replyMSG: req.body.replymsg
                     }
                     // save the message as last element in the message database array
-                    user.facebook.message[user.facebook.message.length] = messageData;
+                    user.facebook.feed[user.facebook.feed.length] = feedData;
                     user.save(function (err) {
                         return res.redirect('/' + req.user._id + '/profile');
                     });
                 }
                 // if keyword already exist
-                if (message) {
-                    req.flash('err', 'Received message already exists');
+                if (feed) {
+                    req.flash('err', 'Received comment already exists');
                     return res.redirect('/' + req.user._id + '/profile');
                 }
             });
     });
 
     // Delete keywords and respective replies 
-    app.get('/:userid/removemessage/:no', function (req, res, next) {
+    app.get('/:userid/removefeed/:no', function (req, res, next) {
         var user = req.user;
-        user.facebook.message[req.params.no].remove();
+        user.facebook.feed[req.params.no].remove();
         user.save(function (err) {
             return res.redirect('/' + req.user._id + '/profile');
         });
@@ -141,17 +146,21 @@ module.exports = function (app) {
 
 function getUserPage(user, userid) {
     return function (callback) {
-        request.get({
-            url: 'https://graph.facebook.com/me/accounts',
-            qs: { access_token: user.facebook.token },
-            json: true // Automatically parses the JSON string in the response
-        }, function (error, response, body) {
-            // catch FB OAuth Error
-            if (body.error) { return callback(body.error.message) };
-            var data = body.data;
-            // Pass callback to asyc for updateUserPage function
-            return callback(error, user, userid, data);
-        });
+        fbRequest.fbGraphAPI(
+            { access_token: user.facebook.token },
+            {
+                objectID: 'me',
+                edge: '/accounts',
+                method: 'GET'
+            },
+            function (error, response, body) {
+                // catch FB OAuth Error
+                if (body.error) { return callback(body.error.message) };
+                var data = body.data;
+                // Pass callback to asyc for updateUserPage function
+                return callback(error, user, userid, data);
+            }
+        );
     }
 }
 
@@ -176,7 +185,7 @@ function updateUserPage(user, userid, data, callback) {
                     // Push pagedata to database
                     user.facebook.page[index] = pagedata;
                 }
-                
+
                 if (_page) { // if page already exist
                     var pagedata = {
                         name: data[index].name,

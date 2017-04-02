@@ -96,8 +96,8 @@ module.exports = function (app) {
 
     // Iterate over each entry - there may be multiple if batched
     messaging.forEach(function (message) {
-      // handlemessage(message);
-      console.log(message);
+      handleFeed.receivedMessaging(message);
+      
     });
     
   }
