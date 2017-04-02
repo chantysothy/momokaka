@@ -102,68 +102,6 @@ module.exports = function (app) {
     
   }
 
-
-
-  function receivedPost(changes, page) {
-    var senderID = changes.value.sender_id;
-    var commentID = changes.value.post_id;
-    var timeOfMessage = changes.value.created_time;
-    var messageText = changes.value.message;
-    var pagetoken = page.pagetoken
-    var pageid = page.id
-    console.log("Received message for user %d at %d with message:",
-      senderID, timeOfMessage, messageText);
-    // refer http://stackoverflow.com/questions/25677743/mongodb-embedded-array-elemmatchprojection-error-issue for clarification
-    User.aggregate([
-      { "$match": { 'facebook.page.id': pageid } },
-      { "$unwind": "$facebook.message" },
-      { "$match": { "facebook.message.received": messageText.toLowerCase() } },
-      { "$project": { "facebook.message": 1 } }
-    ]).exec(function (err, message) {
-      if (err)
-        console.log(err);
-      if (message.length == 0)
-        console.log("Message %s is not in database", messageText)
-      if (message.length == 1)
-        callGraphAPI(message[0].facebook.message.send, commentID, pagetoken)
-    });
-    // console.log(JSON.stringify(message));
-
-    // var messageId = message.mid;
-
-    // var messageText = message.text;
-    // var messageAttachments = message.attachments;
-
-    // if (messageText) {
-
-    // If we receive a text message, check to see if it matches a keyword
-    // and send back the example. Otherwise, just echo the text we received.
-    // switch (messageText) {
-    //   case 'carousel':
-    //     sendGenericMessage(senderID);
-    //     break;
-    // callGraphAPI(messageText, commentID, pagetoken)
-    //   default:
-    //   sendTextMessage(senderID, messageText);
-
-    // }
-    // } else if (messageAttachments) {
-    //   sendTextMessage(senderID, "Message with attachment received");
-    // }
-  }
-
-  function sendTextMessage(recipientId, messageText) {
-    var messageData = {
-      recipient: {
-        id: 1162039973831674//recipientId
-      },
-      message: {
-        text: "Hai " + messageText// sepatutnya sini messageText
-      }
-    };
-    callSendAPI(messageData);
-  }
-
   function callSendAPI(messageData, token) {
     request({
       uri: 'https://graph.facebook.com/v2.8/me/messages',
@@ -185,19 +123,4 @@ module.exports = function (app) {
     });
   }
 
-  function postPage(page) {
-    request({
-      uri: 'https://graph.facebook.com/v2.8/' + page.id + '/subscribed_apps',
-      method: 'POST',
-      qs: { access_token: page.pagetoken }
-    }, function (error, response, body) {
-      if (!error && JSON.parse(body).success == true) {
-        console.log(JSON.parse(body).success);
-        page._isAppSubscribed = 'Connected'
-        page.save(function (err) {
-          console.log(err);
-        });
-      };
-    });
-  }
 }
