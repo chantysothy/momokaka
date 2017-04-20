@@ -52,14 +52,14 @@ module.exports = {
                 if (feed.send) {
                     // processing output from database and formatting it into FB comment reply format
                     var options = new fbCommentReplyTemplate
-                    .prepareCommentReply(feed)
+                        .prepareCommentReply(feed)
                         .compose();
                     options.access_token = token;
                     // sending a comment reply using Graph API
                     fbRequest.replyComment(options, objectID);
                 }
-                
-                if (feed.replyMSG) { 
+
+                if (feed.replyMSG) {
                     // processing output from database and formatting it into FB comment reply format
                     var options = new fbCommentReplyTemplate
                         .prepareMessageReply(feed)
@@ -69,13 +69,13 @@ module.exports = {
                     // sending a messenger reply using Graph API
                     fbRequest.replyMessage(options, objectID);
                 }
-                
+
             }
-            else { return console.log("Message %s is not in database", messageText);}
-            
+            else { return console.error("Message %s is not in database", messageText); }
+
         });
     },
-    
+
     receivedMessaging: function (value) {
         // [{ new comment
         //   field: 'feed',

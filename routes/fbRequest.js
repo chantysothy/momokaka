@@ -22,13 +22,13 @@ module.exports = {
     fbGraphAPI: GraphAPI
 }
 
-function messageCallback(error, response, body) {
-    if (!error && response.statusCode == 200) {
+function messageCallback(err, res) {
+    if (!err && res.statusCode == 200) {
         console.log("Successfully sent generic message with id %s",
-            body.id);
+            res.body.id);
     } else {
-        console.error("Unable to send message: %d %s", response.statusCode, response.statusMessage);
-        console.error("Error : ", body.error.type, body.error.message);
+        console.error("Unable to send message: %d %s", res.statusCode, res.statusMessage);
+        console.error("Error : ", res.body.err.type, res.body.err.message);
     }
 }
 
@@ -37,6 +37,6 @@ function GraphAPI(options, fbObject, callback) {
         uri: 'https://graph.facebook.com/v2.8/' + fbObject.objectID + fbObject.edge,
         qs: options,
         method: fbObject.method,
-        json: true // Automatically parses the JSON string in the response
+        json: true
     }, callback);
 }

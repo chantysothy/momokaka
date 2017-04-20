@@ -1,4 +1,4 @@
-var request = require('request');
+var request = require('req-fast');
 
 // load up the user model
 var User = require('../routes/models/user');
@@ -96,6 +96,7 @@ module.exports = function (app) {
 
     // Iterate over each entry - there may be multiple if batched
     messaging.forEach(function (message) {
+      // ref : https://developers.facebook.com/docs/messenger-platform/send-api-reference
       handleFeed.receivedMessaging(message);
       
     });

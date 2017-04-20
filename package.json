@@ -7,6 +7,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "async": "latest",
     "bcrypt-nodejs": "latest",
     "bluebird": "^3.4.7",
     "body-parser": "~1.15.2",
@@ -22,9 +23,7 @@
     "passport": "latest",
     "passport-facebook": "latest",
     "passport-local": "^1.0.0",
-    "request": "latest",
-    "request-promise": "^4.1.1",
-    "serve-favicon": "~2.3.0",
-    "async": "latest"
+    "request": "^2.81.0",
+    "serve-favicon": "~2.3.0"
   }
 }

@@ -4,13 +4,14 @@ var Promise = require('bluebird'); //ADD THIS LINE
 Promise.promisifyAll(mongoose); //AND THIS LINE
 
 var fbpageSchema = mongoose.Schema({
+    _owner: { type: mongoose.Schema.ObjectId, ref: 'User' },
     name: String,
-    id: { type: String },
-    pagetoken: String,
-    _isAppSubscribed: { type: String, default: "Not Connected" }
+    id: String,
+    pagetoken: String
 });
 
 var feedSchema = mongoose.Schema({
+    _page: [{ type: mongoose.Schema.ObjectId, ref: 'Pages' }],
     received: String,
     send: String,
     imageURL: String,
@@ -20,6 +21,11 @@ var feedSchema = mongoose.Schema({
 var messengerSchema = mongoose.Schema({
     _isConnected: { type: Boolean, default: false },
     send: String
+});
+
+var pagelistSchema = mongoose.Schema({
+    name: String,
+    id: String,
 });
 
 var userSchema = mongoose.Schema({
@@ -32,8 +38,7 @@ var userSchema = mongoose.Schema({
         token: String,
         email: String,
         name: String,
-        page: [fbpageSchema],
-        feed: [feedSchema]
+        pagelist: [pagelistSchema]
     }
 });
 
@@ -48,4 +53,8 @@ userSchema.methods.validPassword = function (password) {
     return bcrypt.compareSync(password, this.local.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = {
+    User: mongoose.model('User', userSchema),
+    Page: mongoose.model('Page', fbpageSchema),
+    Feed: mongoose.model('Feed', feedSchema),
+}; 

@@ -45,7 +45,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // routes ======================================================================
 require('./routes/routes.js')(app, passport);
-require('./routes/pages.js')(app);
+require('./routes/handlepages.js')(app);
 require('./routes/fbwebhook.js')(app);
 
 

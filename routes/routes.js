@@ -1,4 +1,6 @@
-var User = require('./models/user.js');
+var DB = require('../routes/models/user');
+var Page = DB.Page;
+var Feed = DB.Feed;
 
 module.exports = function (app, passport) {
     app.get('/', function (req, res) {
@@ -12,12 +14,20 @@ module.exports = function (app, passport) {
     app.get('/profile', isLoggedIn, function (req, res) {
         res.redirect('/' + req.user._id + '/profile')
     });
-
+    
     app.get('/:userid/profile', isLoggedIn, function (req, res) {
-        res.render('profile.ejs', {
-            user: req.user, // get the user out of session and pass to template
-            err: req.flash('err')
+        Promise.all([
+            getDB(Page, req.params.userid),
+            getDB(Feed, req.params.userid)
+        ]).then(function (result) {
+            res.render('profile.ejs', {
+                user: req.user, // get the user out of session and pass to template
+                page: result[0],
+                feed: result[1],
+                err: req.flash('err')
+            });
         });
+        
     });
 
     // =====================================
@@ -166,4 +176,14 @@ function isLoggedIn(req, res, next) {
         return next();
     }
     res.redirect('/login')
-}
+};
+
+function getDB(DBobject, ownerID) {
+    return new Promise(function (resolve, reject) {
+        DBobject.find({ '_owner': ownerID })
+            .lean()
+            .exec(function (err, pages) {
+                return resolve(pages);
+            });
+    }); 
+};

@@ -1,0 +1,56 @@
+<h3 class="text-primary"><span class="fa fa-facebook">
+</span> Feed</h3>
+
+<form action="/<%=user._id%>/savefeed" method="post" class="form-inline">
+    <div class="input-group margin-bottom-sm">
+        <span class="input-group-addon"><i class="fa fa-book fa-fw"></i></span>
+        <input class="form-control" type="text" placeholder="Received Message" name="keyword">
+    </div>
+    <div class="input-group margin-bottom-sm-20">
+        <span class="input-group-addon"><i class="fa fa-envelope-o fa-fw"></i></span>
+        <input class="form-control" type="text" placeholder="Reply Message" name="reply">
+    </div>
+    <div class="input-group margin-bottom-sm-20">
+        <span class="input-group-addon"><i class="fa fa-envelope-o fa-fw"></i></span>
+        <input class="form-control" type="text" placeholder="Reply Image URL" name="imageurl">
+    </div>
+    <div class="input-group margin-bottom-sm-20">
+        <span class="input-group-addon"><i class="fa fa-envelope-o fa-fw"></i></span>
+        <input class="form-control" type="text" placeholder="Reply Message" name="replymsg">
+    </div>
+    <button type="submit" class="btn btn-default">Save</button>
+</form>
+
+<table class="table table-bordered">
+    <p>
+        <tr>
+            <th>Keyword</th>
+            <th>Comment Reply</th>
+            <th>Comment Attachment URL</th>
+            <th>Message Reply</th>
+        </tr>
+        <% if (feed[0]) { %>
+            <% for (var i = 0; i < feed.length; i++) { %>
+                <tr>
+                    <td>
+                        <%= feed[i].received %>
+                    </td>
+                    <td>
+                        <%= feed[i].send %>
+                    </td>
+                    <td>
+                        <%= feed[i].imageURL %>
+                    </td>
+                    <td>
+                        <%= feed[i].replyMSG %>
+                    </td>
+                    <td>
+                        <% if (feed[i]) { %>
+                            <a href='/<%=user._id%>/removefeed/<%=feed[i].received%>' class="btn btn-default btn-xs">Remove</a>
+                            <% } %>
+                    </td>
+                </tr>
+                <% } %>
+                    <% } %>
+    </p>
+</table>

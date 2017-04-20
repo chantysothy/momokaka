@@ -4,12 +4,13 @@
 
 <head>
     <title>KMC</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <style>
-        body        { padding-top:80px; word-wrap:break-word; }
-    </style>
+    <script type="text/javascript" language="javascript" src="/javascripts/main.js"></script>
+    <link rel="stylesheet" type="text/css" href="/stylesheets/style.css">
 </head>
+
 <body>
     <div class="container">
 
@@ -38,30 +39,24 @@
             </div>
         </div>
 
+
         <!--FACEBOOK INFORMATION -->
         <div class="col-sm-20">
             <div class="well">
                 <h3 class="text-primary"><span class="fa fa-facebook"></span> Page Owner</h3>
                 <!-- check if the user has this token (is the user authenticated with this social account) -->
-                <!--<% if (user.facebook.token) { %>-->
-                <p>
-                        <strong>name</strong>:
-                        <%= user.facebook.name %><br>
-                        <strong>id</strong>:
-                        <%= user.facebook.id %><br>
-                        <!--<strong>token</strong>:
-                        <%= user.facebook.token %><br>
-                        <strong>email</strong>:
-                        <%= user.facebook.email %>-->
-                </p>
-                        <% include ./pages %>
-                <!--<a href="/<%=user._id%>/unlink/facebook" class="btn btn-primary">Unlink Facebook</a>
-                        <% } else { %>
-                        <a href="/<%=user._id%>/connect/facebook" class="btn btn-primary">Connect Facebook</a>
-                        <% } %>-->
+                <div>
+                    <strong>Username</strong>: <span id="userFBName"><%= user.facebook.name %> </span><br>
+                    <strong>ID</strong>: <span id="userFBID"><%= user.facebook.id %> </span><br>
+                </div>
             </div>
+            <% include ./pages %>
         </div>
-
-    </div>
+        <% if (err.length > 0) { %>
+            <div class="alert alert-danger">
+                <%= err %>
+            </div>
+            <% } %>
 </body>
+
 </html>

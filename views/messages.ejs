@@ -4,26 +4,21 @@
 <form action="/<%=user._id%>/savefeed" method="post" class="form-inline">
     <div class="input-group margin-bottom-sm">
         <span class="input-group-addon"><i class="fa fa-book fa-fw"></i></span>
-        <input class="form-control" type="text" placeholder="Received Message" name="keyword">
-    </div>
+        <input class="form-control" type="text" placeholder="Received Comment" name="keyword">
+    </div><br>
     <div class="input-group margin-bottom-sm-20">
         <span class="input-group-addon"><i class="fa fa-envelope-o fa-fw"></i></span>
-        <input class="form-control" type="text" placeholder="Reply Message" name="reply">
-    </div>
+        <input class="form-control" type="text" placeholder="Reply Comment" name="reply">
+    </div><br>
     <div class="input-group margin-bottom-sm-20">
         <span class="input-group-addon"><i class="fa fa-envelope-o fa-fw"></i></span>
         <input class="form-control" type="text" placeholder="Reply Image URL" name="imageurl">
-    </div>
+    </div><br>
     <div class="input-group margin-bottom-sm-20">
         <span class="input-group-addon"><i class="fa fa-envelope-o fa-fw"></i></span>
         <input class="form-control" type="text" placeholder="Reply Message" name="replymsg">
-    </div>
+    </div><br>
     <button type="submit" class="btn btn-default">Save</button>
-    <% if (err.length > 0) { %>
-        <div class="alert alert-danger">
-            <%= err %>
-        </div>
-        <% } %>
 </form>
 
 <table class="table table-bordered">
@@ -34,24 +29,24 @@
             <th>Comment Attachment URL</th>
             <th>Message Reply</th>
         </tr>
-        <% if (user.facebook.feed[0]) { %>
-            <% for (var i = 0; i < user.facebook.feed.length; i++) { %>
+        <% if (feed[0]) { %>
+            <% for (var i = 0; i < feed.length; i++) { %>
                 <tr>
                     <td>
-                        <%= user.facebook.feed[i].received %>
+                        <%= feed[i].received %>
                     </td>
                     <td>
-                        <%= user.facebook.feed[i].send %>
+                        <%= feed[i].send %>
                     </td>
                     <td>
-                        <%= user.facebook.feed[i].imageURL %>
+                        <%= feed[i].imageURL %>
                     </td>
                     <td>
-                        <%= user.facebook.feed[i].replyMSG %>
+                        <%= feed[i].replyMSG %>
                     </td>
                     <td>
-                        <% if (user.facebook.feed[i]) { %>
-                            <a href='/<%=user._id%>/removefeed/<%=i%>' class="btn btn-default btn-xs">Remove</a>
+                        <% if (feed[i]) { %>
+                            <a href='/<%=user._id%>/removefeed/<%=feed[i].received%>' class="btn btn-default btn-xs">Remove</a>
                             <% } %>
                     </td>
                 </tr>
